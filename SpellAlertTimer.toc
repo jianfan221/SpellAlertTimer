@@ -1,0 +1,12 @@
+﻿## Interface: 120100
+## Title: SpellAlertTimer(SAT)
+## Title-zhCN: 法术警报计时器SpellAlertTimer(SAT)
+## Notes: Spell alert countdown text|n|cff00ff00/SAT|r to open settings
+## Notes-zhCN: 法术警报显示倒数文字|n|cff00ff00/SAT|r 打开设置选项
+## Author: CN-无尽之海-简繁丶
+## X-Curse-Project-ID: 546555
+## SavedVariables: SpellAlertTimerDB
+## Version: 20260813.2
+
+Options.lua
+SpellAlertTimer.lua
