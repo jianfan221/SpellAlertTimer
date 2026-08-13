@@ -1,0 +1,25 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - '[0-9v]*'
+    paths-ignore:
+      - ".github/**"
+      - "README.md"
+      - ".luarc.json"
+      - "annotations.lua"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: BigWigsMods/packager@master
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
