@@ -5,6 +5,9 @@
 local addonName, ns = ...
 if not DoesTemplateExist("CustomAuraContainerTemplate") then return end
 
+-- 调试模式：默认关闭，不持久化（每次 reload 自动重置）
+ns.Debug = false
+
 -- 法术 ID 映射：暴雪提供的SPELL_ID可能不是实际SPELL_ID 需要映射到实际SPELL_ID才能正确显示倒计时
 local SPELL_ALIAS = {
 	[1277420] = 263725,	--奥法-节能施法1层
@@ -37,7 +40,7 @@ end
 
 local function GetOrCreateContainer(spellID, position, scale, overlay)
 	local key = spellID .. "-" .. position .. "-" .. scale
-	--print(key)--调试
+	if ns.Debug then print(key) end
 
 	local container = slots[key]
 	if not container then
