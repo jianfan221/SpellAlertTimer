@@ -11,9 +11,13 @@ local isCN = GetLocale():match("^zh")
 local L = isCN and {
 	title = "倒计时文本尺寸",
 	hOffsetTitle = "水平偏移",
+	debugTitle = "调试模式",
+	debugTip = "勾选后在聊天框打印每个法术警报的 ID-位置-尺寸",
 } or {
 	title = "Countdown Text Scale",
 	hOffsetTitle = "Horizontal Offset",
+	debugTitle = "Debug Mode",
+	debugTip = "Print the spellID-position-scale of each spell alert to chat when checked",
 }
 
 -- 懒构建：frame 首次显示时才执行 builder（只执行一次）
@@ -44,6 +48,13 @@ ns.LazyBuild(SATPanel, function()
 	divider:SetPoint("TOPRIGHT", SATPanel, "TOPRIGHT", -16, -10)
 	divider:SetHeight(1)
 	divider:SetColorTexture(1, 1, 1, 0.3)
+
+	-- 版本号（分割线右上角）
+	local version = C_AddOns.GetAddOnMetadata("SpellAlertTimer", "Version")
+	local versionText = SATPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+	versionText:SetPoint("BOTTOMRIGHT", divider, "TOPRIGHT", 0, 3)
+	versionText:SetTextColor(0.8, 0.8, 0.8)
+	versionText:SetText(version or "")
 
 	-- 通用滑动条行：自动向下排布（每行固定 40px），结构为 label + slider + 右侧数值
 	local rowY = -40
@@ -108,10 +119,38 @@ ns.LazyBuild(SATPanel, function()
 			ns.UpdateOffset(value)
 		end
 	end)
+
+	-- 调试模式勾选框：文本在左、勾选按钮与滑动条对齐（不保存，每次上线默认关闭）
+	local debugLabel = SATPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	debugLabel:SetPoint("TOPLEFT", divider, "TOPLEFT", 0, rowY)
+	debugLabel:SetText(L.debugTitle)
+
+	local debugCheck = CreateFrame("CheckButton", nil, SATPanel, "UICheckButtonTemplate")
+	debugCheck:SetPoint("LEFT", debugLabel, "LEFT", 200, 0)
+	debugCheck:SetChecked(false)
+	debugCheck:HookScript("OnClick", function(self)
+		if ns then ns.Debug = self:GetChecked() end
+	end)
+	-- 鼠标提示：说明调试模式会在聊天框打印 ID-位置-尺寸
+	debugCheck:HookScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+		GameTooltip:SetText(L.debugTip, 1, 1, 1)
+		GameTooltip:Show()
+	end)
+	debugCheck:HookScript("OnLeave", function()
+		GameTooltip:Hide()
+	end)
 end)
 
--- /sat 打开设置界面
+-- /sat 打开设置界面（战斗中延迟到脱战后）
 SLASH_SAT1 = "/sat"
 SlashCmdList["SAT"] = function()
-	Settings.OpenToCategory(category:GetID())
+	if InCombatLockdown() then
+		EventRegistry:RegisterFrameEventAndCallback("PLAYER_REGEN_ENABLED", function(ownerID)
+			EventRegistry:UnregisterFrameEventAndCallback("PLAYER_REGEN_ENABLED", ownerID)
+			Settings.OpenToCategory(category:GetID())
+		end)
+	else
+		Settings.OpenToCategory(category:GetID())
+	end
 end
