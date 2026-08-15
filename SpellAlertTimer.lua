@@ -36,24 +36,24 @@ local function GetSideOffset(position)
 end
 
 local function GetOrCreateContainer(spellID, position, scale, overlay)
-	local filter = SPELL_ALIAS[spellID]
-	if filter == false then
-		return  -- 该法术标记为不需要显示，直接过滤掉不创建
-	end
-
-	-- 构造候选法术ID集合（支持单个ID，或一组ID如 {369299, 392268}）
-	local includeSet
-	if type(filter) == "table" then
-		includeSet = {}
-		for _, id in pairs(filter) do includeSet[id] = true end
-	else
-		includeSet = { [filter or spellID] = true }
-	end
-
 	local key = spellID .. "-" .. position .. "-" .. scale
 	--print(key)--调试
+
 	local container = slots[key]
 	if not container then
+		local filter = SPELL_ALIAS[spellID]
+		if filter == false then
+			return  -- 该法术标记为不需要显示，直接过滤掉不创建
+		end
+		-- 构造候选法术ID集合（支持单个ID，或一组ID如 {369299, 392268}）
+		local includeSet
+		if type(filter) == "table" then
+			includeSet = {}
+			for _, id in pairs(filter) do includeSet[id] = true end
+		else
+			includeSet = { [filter or spellID] = true }
+		end
+
 		container = CreateFrame("AuraContainer", nil, SpellActivationOverlayFrame, "CustomAuraContainerTemplate")
 		container.overlaySpellID = spellID
 		container.overlayRef = overlay
