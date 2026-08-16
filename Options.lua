@@ -18,7 +18,7 @@ local L = isCN and {
 	hOffsetTitle = "水平偏移",
 	debugTitle = "调试模式",
 	debugTip = "勾选后在聊天框打印每个法术警报的 ID-位置-尺寸",
-	combatHint = "战斗中无法修改,需脱离战斗后修改才会应用到已显示的文字",
+	combatHint = "战斗中/M+等秘密环境无法修改,需脱战或M+结束后生效",
 	openAfterCombat = "|cffff8c00SpellAlertTimer|r 设置界面将在脱战后打开",
 } or {
 	title = "Countdown Text Scale",
@@ -29,7 +29,7 @@ local L = isCN and {
 	hOffsetTitle = "Horizontal Offset",
 	debugTitle = "Debug Mode",
 	debugTip = "Print the spellID-position-scale of each spell alert to chat when checked",
-	combatHint = "Cannot change in combat; changes apply to shown text after leaving combat",
+	combatHint = "Cannot change in combat or secret environments (e.g. M+); changes apply after leaving combat or M+ ends",
 	openAfterCombat = "|cffff8c00SpellAlertTimer|r settings will open after leaving combat",
 }
 
@@ -150,12 +150,11 @@ ns.LazyBuild(SATPanel, function()
 		outlineButton:SetText(outlineOptions[outlineIdx].label)
 	end
 	outlineButton:SetScript("OnClick", function()
-		-- 战斗中不执行任何改动（与滑动条一致）
-		if InCombatLockdown() then return end
 		outlineIdx = outlineIdx % #outlineOptions + 1
 		SpellAlertTimerDB.outline = outlineOptions[outlineIdx].value
 		RefreshOutlineButton()
-		if ns and ns.UpdateOutline then
+		-- 战斗中不实时应用到已创建文字，仅保存；退出战斗后新文字自动用新值
+		if ns and ns.UpdateOutline and not InCombatLockdown() then
 			ns.UpdateOutline(SpellAlertTimerDB.outline)
 		end
 	end)
