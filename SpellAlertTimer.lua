@@ -100,7 +100,10 @@ local function GetOrCreateContainer(spellID, position, scale, overlay)
 				cd:SetCountdownMillisecondsThreshold(10)
 				local cdText = cd:GetCountdownFontString()
 				if cdText then
-					cdText:SetFont(cdText:GetFont(), SpellAlertTimerDB.scale * scale, SpellAlertTimerDB.outline or "OUTLINE")
+					-- 初始化时（按钮尚未被禁止）用 GetFont 获取原字体并缓存，避免运行时读取触发 Forbidden 报错
+					local fontFile = cdText:GetFont()
+					btn.fontFile = fontFile
+					cdText:SetFont(fontFile, SpellAlertTimerDB.scale * scale, SpellAlertTimerDB.outline or "OUTLINE")
 					btn.overlayScale = scale
 					ns.cdTexts[btn] = cdText
 				end
@@ -153,16 +156,21 @@ hooksecurefunc(SpellActivationOverlayFrame, "HideAllOverlays", function(self)
 end)
 
 -- 供设置界面调用：实时更新所有倒计时文字缩放（DB 已在 Options 回调中保存）
+-- 用初始化时缓存的字体文件（btn.fontFile），避免运行时 GetFont；pcall 保护 Forbidden 状态下的 SetFont
 function ns.UpdateScale(value)
 	for btn, cdText in pairs(ns.cdTexts) do
-		cdText:SetFont(cdText:GetFont(), value * (btn.overlayScale or 1), SpellAlertTimerDB.outline or "OUTLINE")
+		pcall(function()
+			cdText:SetFont(btn.fontFile, value * (btn.overlayScale or 1), SpellAlertTimerDB.outline or "OUTLINE")
+		end)
 	end
 end
 
 -- 供设置界面调用：实时更新所有倒计时文字的描边
 function ns.UpdateOutline(value)
 	for btn, cdText in pairs(ns.cdTexts) do
-		cdText:SetFont(cdText:GetFont(), SpellAlertTimerDB.scale * (btn.overlayScale or 1), value or "")
+		pcall(function()
+			cdText:SetFont(btn.fontFile, SpellAlertTimerDB.scale * (btn.overlayScale or 1), value or "")
+		end)
 	end
 end
 
