@@ -8,7 +8,7 @@
 ## X-Curse-Project-ID: 546555
 ## X-Wago-ID: E6gvDZN1
 ## SavedVariables: SpellAlertTimerDB
-## Version: 20260817.1
+## Version: 20260819
 
 Options.lua
 SpellAlertTimer.lua
