@@ -5,6 +5,7 @@ local addonName, ns = ...
 SpellAlertTimerDB = SpellAlertTimerDB or {}
 SpellAlertTimerDB.scale = SpellAlertTimerDB.scale or 30
 SpellAlertTimerDB.hOffset = SpellAlertTimerDB.hOffset or 5
+SpellAlertTimerDB.vOffset = SpellAlertTimerDB.vOffset or 5
 SpellAlertTimerDB.outline = SpellAlertTimerDB.outline or "OUTLINE"
 SpellAlertTimerDB.font = SpellAlertTimerDB.font or STANDARD_TEXT_FONT
 
@@ -18,6 +19,7 @@ dbLoader:SetScript("OnEvent", function(self, _, addonName)
 	SpellAlertTimerDB = SpellAlertTimerDB or {}
 	if not SpellAlertTimerDB.scale then SpellAlertTimerDB.scale = 30 end
 	if not SpellAlertTimerDB.hOffset then SpellAlertTimerDB.hOffset = 5 end
+	if not SpellAlertTimerDB.vOffset then SpellAlertTimerDB.vOffset = 5 end
 	if not SpellAlertTimerDB.outline then SpellAlertTimerDB.outline = "OUTLINE" end
 	if not SpellAlertTimerDB.font then SpellAlertTimerDB.font = STANDARD_TEXT_FONT end
 end)
@@ -35,6 +37,7 @@ local L = isCN and {
 	outlineThin = "细",
 	outlineThick = "粗",
 	hOffsetTitle = "水平偏移",
+	vOffsetTitle = "垂直偏移",
 	debugTitle = "调试模式",
 	debugTip = "勾选后在聊天框打印每个法术警报的 ID-位置-尺寸",
 	combatHint = "战斗中/M+等秘密环境修改不生效,离开后自动生效",
@@ -50,6 +53,7 @@ local L = isCN and {
 	outlineThin = "Thin",
 	outlineThick = "Thick",
 	hOffsetTitle = "Horizontal Offset",
+	vOffsetTitle = "Vertical Offset",
 	debugTitle = "Debug Mode",
 	debugTip = "Print the spellID-position-scale of each spell alert to chat when checked",
 	combatHint = "Changes won't take effect in secret environments (e.g. combat/M+); they apply automatically after leaving",
@@ -258,6 +262,14 @@ ns.LazyBuild(SATPanel, function()
 	CreateSliderRow(L.hOffsetTitle, SpellAlertTimerDB.hOffset, -25, 25, 1, function(value)
 		SpellAlertTimerDB.hOffset = value
 		-- 战斗中不实时移动已创建容器，仅保存；退出战斗后新容器自动用新值
+		if ns and ns.UpdateOffset and not InCombatLockdown() then
+			ns.UpdateOffset(value)
+		end
+	end)
+
+	-- 垂直偏移（像素）：正值为上下外扩、负值为上下内收（仅影响上/下位置 3/4）
+	CreateSliderRow(L.vOffsetTitle, SpellAlertTimerDB.vOffset, -25, 25, 1, function(value)
+		SpellAlertTimerDB.vOffset = value
 		if ns and ns.UpdateOffset and not InCombatLockdown() then
 			ns.UpdateOffset(value)
 		end
