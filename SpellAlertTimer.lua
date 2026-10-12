@@ -55,11 +55,24 @@ local SIDE_DIR = {
 	[8] = 1,
 }
 
+-- 垂直方向：上(3)往上为正、下(4)往下为负；具体大小由 DB.vOffset 控制
+local VERT_DIR = {
+	[3] = 1,
+	[4] = -1,
+}
+
 -- 计算水平偏移（像素）：方向 × DB.hOffset
 local function GetSideOffset(position)
 	local dir = SIDE_DIR[position]
 	if not dir then return 0 end
 	return dir * (SpellAlertTimerDB.hOffset or 5)
+end
+
+-- 计算垂直偏移（像素）：方向 × DB.vOffset
+local function GetVertOffset(position)
+	local dir = VERT_DIR[position]
+	if not dir then return 0 end
+	return dir * (SpellAlertTimerDB.vOffset or 5)
 end
 
 local function GetOrCreateContainer(spellID, position, scale, overlay)
@@ -116,7 +129,8 @@ local function GetOrCreateContainer(spellID, position, scale, overlay)
 		slots[key] = container
 	end
 	local sideOffset = GetSideOffset(position)
-	container:SetPoint("CENTER", overlay, "CENTER", sideOffset * scale, 0)
+	local vertOffset = GetVertOffset(position)
+	container:SetPoint("CENTER", overlay, "CENTER", sideOffset * scale, vertOffset * scale)
 	container:Show()
 
 	-- 互斥组：同一组内不管哪个触发都隐藏另一个（圣光涌动/阴暗面之力同位置冲突）
@@ -163,6 +177,7 @@ local styleHandle  -- 限制中挂起一次，解除限制时重试（handle 非
 
 function ns.ApplyCDStyle()
 	local failed = false
+	local warnText = GetLocale():match("^zh") and "修改失败，环境受限" or "Modification failed, environment restricted"
 	for btn, cdText in pairs(ns.cdTexts) do
 		local ok = pcall(function()
 			cdText:SetFont(
@@ -173,20 +188,20 @@ function ns.ApplyCDStyle()
 		end)
 		if not ok then
 			failed = true
-			local warnText = GetLocale():match("^zh") and "修改失败，环境受限" or "Modification failed, environment restricted"
 			UIErrorsFrame:AddExternalWarningMessage(warnText)
 		end
 	end
-	-- 有失败则挂起（未挂起时才注册），解除限制时自动重试
+	-- 失败则挂起；限制解除后自动重试，成功才注销（不判断类型，任意一次 Inactive 都试一次）
 	if failed and not styleHandle then
-		styleHandle = EventRegistry:RegisterFrameEventAndCallbackWithHandle("ADDON_RESTRICTION_STATE_CHANGED", function(_owner, type, state)
-			if state == Enum.AddOnRestrictionState.Inactive then
+		styleHandle = EventRegistry:RegisterFrameEventAndCallbackWithHandle("ADDON_RESTRICTION_STATE_CHANGED", function(_, _, state)
+			if state ~= Enum.AddOnRestrictionState.Inactive then return end
+			if ns.ApplyCDStyle() then
 				styleHandle:Unregister()
 				styleHandle = nil
-				ns.ApplyCDStyle()
 			end
 		end)
 	end
+	return not failed
 end
 
 -- 供设置界面调用：实时更新所有容器的水平偏移（DB 已在 Options 回调中保存）
@@ -194,8 +209,9 @@ function ns.UpdateOffset(value)
 	for _, container in pairs(slots) do
 		if container.overlayRef and container.overlayRef:IsShown() then
 			local sideOffset = GetSideOffset(container.position)
+			local vertOffset = GetVertOffset(container.position)
 			container:ClearAllPoints()
-			container:SetPoint("CENTER", container.overlayRef, "CENTER", sideOffset * container.scale, 0)
+			container:SetPoint("CENTER", container.overlayRef, "CENTER", sideOffset * container.scale, vertOffset * container.scale)
 		end
 	end
 end
